@@ -48,8 +48,23 @@ def print_table_data():
             print(cell.text, end=' | ')
         print()
 
-# ดึงข้อมูลตารางเพียงครั้งเดียว
-print_table_data()
+try:
+    car = 3
+    for _ in range(car, 0, -1):
+        # ดึงข้อมูลตาราง
+        print_table_data()
 
-# เบราว์เซอร์จะยังคงเปิดอยู่
-input("กด Enter เพื่อปิดโปรแกรม")
+        # รอ 1 วินาที
+        time.sleep(1)
+
+        # รีเฟรชหน้า
+        driver.refresh()
+
+    print("โปรแกรมกำลังรอการดำเนินการต่อ กดปุ่มใด ๆ เพื่อหยุดการทำงาน...")
+    input()  # รอให้ผู้ใช้กดปุ่มใด ๆ เพื่อหยุดการทำงาน
+
+except KeyboardInterrupt:
+    print("หยุดการทำงาน")
+
+# ปิด WebDriver
+driver.quit()
