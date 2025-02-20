@@ -30,45 +30,38 @@ WebDriverWait(driver, 10).until(EC.url_contains('/home'))
 driver.get('https://th.turboroute.ai/#/grab-single/single-hall')
 
 def get_table_data():
-    # รอให้ตารางโหลดเสร็จ
-    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'table')))
-    # ดึงข้อมูลจากตาราง
-    table = driver.find_element(By.CSS_SELECTOR, 'table')
-    rows = table.find_elements(By.TAG_NAME, 'tr')
-
-    data = []
+    # รอให้ตารางโหลดเสร็จและมีแถวอย่างน้อยหนึ่งแถว
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, 'table.el-table__body tbody tr'))
+    )
+    # ดึงข้อมูลจากตารางแรกที่พบ
+    table = driver.find_element(By.CSS_SELECTOR, 'table.el-table__body')
+    
+    tbody = table.find_element(By.TAG_NAME, 'tbody')
+    rows = tbody.find_elements(By.TAG_NAME, 'tr')
     for row in rows:
-        cells = row.find_elements(By.CSS_SELECTOR, 'td')
-        print(f"Number of cells in row: {len(cells)}")  # พิมพ์จำนวนเซลล์ในแต่ละแถว
-        # ดึงข้อมูลจากทุกเซลล์ในแถว
-        row_data = [cell.text for cell in cells]
-        if row_data:  # ตรวจสอบว่าแถวมีข้อมูล
-            data.append(row_data)
-    return data
+        cells = row.find_elements(By.TAG_NAME, 'td')
+        for cell in cells:
+            print(cell.text, end=' | ')
+        print("")
 
 try:
-    # สลับไปที่ iframe ก่อน (ถ้ามี)
-    try:
-        iframe = driver.find_element(By.TAG_NAME, 'iframe')
-        driver.switch_to.frame(iframe)
-    except:
-        print("ไม่พบ iframe หรือไม่จำเป็นต้องสลับ")
+    car = 3
+    for _ in range(car, 0, -1):
+        # ดึงข้อมูลตาราง
+        get_table_data()
 
-    # ดึงข้อมูลตาราง
-    table_data = get_table_data()
+        # รอ 1 วินาที
+        time.sleep(1)
 
-    # สลับกลับไปที่เนื้อหาหลัก
-    driver.switch_to.default_content()
+        # รีเฟรชหน้า
+        driver.refresh()
 
-    # พิมพ์ข้อมูลออกมา
-    for entry in table_data:
-        print(entry)
+    print("")
+    input() 
 
-    # รอให้ผู้ใช้ปิดโปรแกรมเอง
-    input("กด Enter เพื่อปิดโปรแกรม...")
-
-except WebDriverException as e:
-    print(f"เกิดข้อผิดพลาด: {e}")
+except (KeyboardInterrupt, WebDriverException) as e:
+    print("หยุดการทำงาน")
 
 finally:
     # ปิด WebDriver
