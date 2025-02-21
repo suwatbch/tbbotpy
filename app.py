@@ -4,10 +4,8 @@ from datetime import datetime
 
 loops = 3
 
-# จำนวนรถที่จะรับงาน
-my_car = {'4W': 2, '4WJ': 0, '6W5.5': 1, '6w7.2': 0}
-# เส้นทางรถที่จะรับงาน
-route_direction = ['SO5-SKU', 'SO5-TLG-HKT', '5BKT-EA2']
+my_car = {'4W': 2, '4WJ': 0, '6W5.5': 1, '6w7.2': 0} # จำนวนรถที่จะรับงาน
+route_direction = ['SO5-SKU', 'SO5-TLG-HKT', '5BKT-EA2'] # เส้นทางรถที่จะรับงาน
 
 
 assigned_cars = {key: 0 for key in my_car}
