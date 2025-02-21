@@ -64,26 +64,30 @@ def get_table_data():
                     # ลดจำนวนรถที่มีใน my_car
                     my_car[car_type] -= 1
 
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\n📅 สรุปผล: {current_time}")
+        # เพิ่มสรุปผลการรับงานรายรอบ
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"\n📅 สรุปผลรายรอบ: {current_time}")
+        print("🚗 รถว่าง:")
+        for car_type, count in my_car.items():
+            if count > 0:
+                print(f"   - {car_type} จำนวน {count} คัน")
 
-    print("🚗 รถว่าง:")
-    for car_type, count in my_car.items():
-        if count > 0:
-            print(f"   - {car_type} จำนวน {count} คัน")
-
-    print("✅ รับงาน:")
-    for car_type, routes in assigned_routes.items():
-        if routes:
-            print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
-    
-    print("-----------------------------------------------")
+        print("✅ รับงาน:")
+        for car_type, routes in assigned_routes.items():
+            if routes:
+                print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
+        print("-----------------------------------------------")
     
     return all(count == 0 for count in my_car.values())
 
 try:
     while True:
-        if (get_table_data()):
+        if get_table_data():
+            print("\n📅 ผลสรุปสุดท้าย:")
+            print("✅ รับงาน:")
+            for car_type, routes in assigned_routes.items():
+                if routes:
+                    print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
             break
 
         driver.refresh()
@@ -93,4 +97,5 @@ except (KeyboardInterrupt, WebDriverException) as e:
     print("หยุดการทำงาน")
 
 finally:
+    input("กด Enter เพื่อปิดเบราว์เซอร์...")
     driver.quit()
