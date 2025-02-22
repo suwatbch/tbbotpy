@@ -58,21 +58,13 @@ try:
                                     EC.presence_of_element_located((By.XPATH, "//span[text()='ยืนยันแข่งขันรับงาน']"))
                                 )
 
-                                # ตรวจสอบและคลิกกล่องตรวจสอบหากยังไม่ได้เลือก
-                                checkbox = driver.find_element(By.XPATH, "//input[@type='checkbox']")
-                                if not checkbox.is_selected():
-                                    checkbox.click()
+                                time.sleep(1)
 
-                                # รอให้การตรวจสอบเสร็จสิ้น
-                                WebDriverWait(driver, 60).until(
+                                # รอให้ปุ่ม "แข่งขันรับงาน" สามารถคลิกได้
+                                WebDriverWait(driver, 10).until(
                                     EC.element_to_be_clickable((By.XPATH, "//button[span[text()='แข่งขันรับงาน']]"))
                                 )
 
-                                # ป๊อปอัพปิด
-                                close_button = driver.find_element(By.XPATH, "//button[@aria-label='Close']")
-                                close_button.click()
-                                print("ปิดป๊อปอัพเรียบร้อยแล้ว")
-                                
                                 # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
                                 # popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
                                 # popup_button.click()
@@ -115,7 +107,7 @@ try:
                         summary += f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}\n"
                 
                 print(summary)
-                driver.execute_script(f"alert(`{summary}`);")
+                # driver.execute_script(f"alert(`{summary}`);")
                 break
 
             driver.refresh()
