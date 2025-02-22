@@ -19,8 +19,8 @@ try:
         driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
         WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
 
-        my_car = {'4W': 2, '4WJ': 1, '6W5.5': 1, '6w7.2': 0} # จำนวนรถที่จะรับงาน
-        route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2'] # เส้นทางรถที่จะรับงาน
+        my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
+        route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
 
         assigned_cars = {key: 0 for key in my_car}
         assigned_routes = {key: [] for key in my_car}
@@ -49,22 +49,37 @@ try:
                         # ถ้ารถมากกว่า 0 ถึงจะเข้ารับงาน
                         if car_count > 0:
                             # คลิกปุ่ม "แข่งขันรับงาน"
-                            # try:
-                            #     row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'แข่งขันรับงาน')]")
-                            #     row_button.click()
+                            try:
+                                row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'แข่งขันรับงาน')]")
+                                row_button.click()
 
-                            #     # รอให้ป๊อปอัพแสดงและตรวจสอบเสร็จสิ้น
-                            #     WebDriverWait(driver, 10).until(
-                            #         EC.presence_of_element_located((By.XPATH, "//span[text()='Success!']"))
-                            #     )
+                                # รอให้ป๊อปอัพแสดง
+                                WebDriverWait(driver, 10).until(
+                                    EC.presence_of_element_located((By.XPATH, "//span[text()='ยืนยันแข่งขันรับงาน']"))
+                                )
 
-                            #     # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
-                            #     popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
-                            #     popup_button.click()
-                            #     print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
+                                # ตรวจสอบและคลิกกล่องตรวจสอบหากยังไม่ได้เลือก
+                                checkbox = driver.find_element(By.XPATH, "//input[@type='checkbox']")
+                                if not checkbox.is_selected():
+                                    checkbox.click()
 
-                            # except WebDriverException as e:
-                            #     print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
+                                # รอให้การตรวจสอบเสร็จสิ้น
+                                WebDriverWait(driver, 60).until(
+                                    EC.element_to_be_clickable((By.XPATH, "//button[span[text()='แข่งขันรับงาน']]"))
+                                )
+
+                                # ป๊อปอัพปิด
+                                close_button = driver.find_element(By.XPATH, "//button[@aria-label='Close']")
+                                close_button.click()
+                                print("ปิดป๊อปอัพเรียบร้อยแล้ว")
+                                
+                                # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
+                                # popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
+                                # popup_button.click()
+                                print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
+
+                            except WebDriverException as e:
+                                print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
 
                             # เพิ่มจำนวนรถที่รับงาน
                             assigned_cars[car_type] += 1
@@ -74,8 +89,6 @@ try:
 
                             # ลดจำนวนรถที่มีใน my_car
                             my_car[car_type] -= 1
-
-                            return True
 
             # เพิ่มสรุปผลการรับงานรายรอบ
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -102,7 +115,6 @@ try:
                         summary += f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}\n"
                 
                 print(summary)
-                # แสดงผลสรุปสุดท้ายใน alert
                 driver.execute_script(f"alert(`{summary}`);")
                 break
 
