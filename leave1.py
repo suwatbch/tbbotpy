@@ -1,19 +1,35 @@
+from fastapi import FastAPI
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import time
 
-chrome_options = Options()
-chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+app = FastAPI()
 
-driver = webdriver.Chrome(options=chrome_options)
+@app.get("/check-website")
+async def check_website():
+    # ตั้งค่า Selenium
+    options = webdriver.ChromeOptions()
+    options.add_argument("--start-maximized")  # เปิดเต็มจอ
+    # options.add_argument("--headless")  # ถ้าต้องการให้ทำงานเบื้องหลัง
 
-# ตรวจสอบว่าเว็บที่ต้องการเปิดอยู่หรือไม่
-current_url = driver.current_url
-print(f"Current URL: {current_url}")
+    driver = webdriver.Chrome(options=options)
 
-# ตรวจสอบว่าเปิดอยู่ที่ https://leave.swmaxnet.com/
-if "https://leave.swmaxnet.com/" in current_url:
-    # เปลี่ยนไปยังหน้า https://leave.swmaxnet.com/#module=workday
-    driver.get("https://leave.swmaxnet.com/#module=workday")
-    print("เปลี่ยนไปยังหน้า workday")
-else:
-    print("ไม่ได้เปิดอยู่ที่หน้า leave.swmaxnet.com")
+    try:
+        # เปิด URL เป้าหมาย
+        driver.get("https://leave.swmaxnet.com/")
+        time.sleep(3)  # รอให้หน้าเว็บโหลด
+
+        # ตรวจสอบ URL
+        current_url = driver.current_url
+        if "leave.swmaxnet.com" in current_url:
+            driver.execute_script("alert('พบเว็บเป้าหมายแล้ว!');")  # แสดง Alert
+            time.sleep(2)  # รอให้เห็น Alert
+            return {"status": "success", "message": "✅ พบเว็บเป้าหมาย!"}
+        else:
+            return {"status": "error", "message": "❌ ไม่พบเว็บเป้าหมาย"}
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        driver.quit()  # ปิดเบราว์เซอร์
+

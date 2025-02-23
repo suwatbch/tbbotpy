@@ -19,7 +19,7 @@ try:
         driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
         WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
 
-        my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
+        my_car = {'4W': 1, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
         route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
 
         assigned_cars = {key: 0 for key in my_car}
@@ -110,8 +110,9 @@ try:
                 # driver.execute_script(f"alert(`{summary}`);")
                 break
 
+            time.sleep(0.5)
             driver.refresh()
-            time.sleep(1)
+            time.sleep(0.5)
 
 except (KeyboardInterrupt, WebDriverException) as e:
     print("หยุดการทำงาน")
