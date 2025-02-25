@@ -25,32 +25,16 @@ try:
         button.click()
         print("✅ คลิกปุ่ม 'เปิด DIALOG' สำเร็จ!")
 
-        # รอให้ Dialog เปิด (ใช้ข้อความ "ยืนยันว่าไม่ใช่บอท" เป็นตัวตรวจสอบ)
+        time.sleep(1)
+
         try:
-            dialog = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), 'ยืนยันว่าไม่ใช่บอท')]"))
+            confirm_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, ":r1:"))
             )
-            print("✅ Dialog เปิดสำเร็จ!")
-
-            time.sleep(1)
-
-            # ✅ ค้นหา iframe ของ reCAPTCHA (ใช้ CSS Selector)
-            # iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']")
-            # if len(iframes) > 0:
-            #     driver.switch_to.frame(iframes[0])  # ✅ เปลี่ยนไปที่ iframe แรก
-            #     print("✅ เปลี่ยนไปที่ iframe ของ reCAPTCHA")
-            # else:
-            #     raise TimeoutException("❌ ไม่พบ iframe ของ reCAPTCHA")
-
-            # ✅ ค้นหาและคลิก checkbox ของ reCAPTCHA
-            checkbox = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CLASS_NAME, "recaptcha-checkbox-border"))
-            )
-            checkbox.click()
-            print("✅ คลิก reCAPTCHA สำเร็จ!")
-
+            confirm_button.click()
+            print("✅ คลิกปุ่ม 'ยืนยัน' สำเร็จ!")
         except TimeoutException:
-            print("❌ Dialog หรือ reCAPTCHA ไม่โหลดภายใน 5 วินาที!")
+            print("❌ ปุ่ม 'ยืนยัน' ไม่สามารถคลิกได้ภายใน 10 วินาที!")
 
 except (KeyboardInterrupt, WebDriverException) as e:
     print("❌ หยุดการทำงาน:", str(e))
