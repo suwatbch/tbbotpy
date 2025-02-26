@@ -19,8 +19,12 @@ try:
         driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
         WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
 
-        my_car = {'4W': 1, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
-        route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
+        # my_car = {'4W': 4}
+        # route_direction = ['KRM02-BAGH','NDD-EA1','NDD-PDT','POR-CT1']
+        # my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
+        # route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
+        my_car = {'4WJ': 1}
+        route_direction = ['CT1-4JBG-SPH']
 
         assigned_cars = {key: 0 for key in my_car}
         assigned_routes = {key: [] for key in my_car}
@@ -48,26 +52,21 @@ try:
 
                         # ถ้ารถมากกว่า 0 ถึงจะเข้ารับงาน
                         if car_count > 0:
-                            # คลิกปุ่ม "แข่งขันรับงาน"
                             try:
                                 row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'แข่งขันรับงาน')]")
                                 row_button.click()
 
-                                # รอให้ป๊อปอัพแสดง
                                 WebDriverWait(driver, 10).until(
                                     EC.presence_of_element_located((By.XPATH, "//span[text()='ยืนยันแข่งขันรับงาน']"))
                                 )
-
                                 time.sleep(1)
-
-                                # รอให้ปุ่ม "แข่งขันรับงาน" สามารถคลิกได้
                                 WebDriverWait(driver, 10).until(
                                     EC.element_to_be_clickable((By.XPATH, "//button[span[text()='แข่งขันรับงาน']]"))
                                 )
 
                                 # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
-                                # popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
-                                # popup_button.click()
+                                popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
+                                popup_button.click()
                                 print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
 
                             except WebDriverException as e:

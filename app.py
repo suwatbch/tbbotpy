@@ -12,7 +12,6 @@ try:
     chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
     driver = webdriver.Chrome(options=chrome_options)
-    driver.current_url
     
     # เข้าไปยังหน้า grab-single/single-hall
     driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
@@ -20,8 +19,11 @@ try:
 
     # my_car = {'4W': 4}
     # route_direction = ['KRM02-BAGH','NDD-EA1','NDD-PDT','POR-CT1']
-    my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
-    route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
+    # my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
+    # route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
+    my_car = {'4WJ': 1}
+    route_direction = ['CT1-EA2']
+    # route_direction = ['CT1-4JBG-SPH']
 
     assigned_cars = {key: 0 for key in my_car}
     assigned_routes = {key: [] for key in my_car}
@@ -86,10 +88,14 @@ try:
                             print("✅ คลิก Checkbox แล้ว!!")
 
                             # รอให้ปุ่ม "แข่งขันรับงาน" พร้อมใช้งาน
-                            # confirm_button = WebDriverWait(driver, 10).until(
                             WebDriverWait(driver, 10).until(
-                                EC.element_to_be_clickable((By.XPATH, "//button/span[text()='แข่งขันรับงาน']"))
+                                EC.presence_of_element_located((By.XPATH, "//button/span[text()='แข่งขันรับงาน']"))
                             )
+                            print("✅ พบปุ่ม 'แข่งขันรับงาน' แล้ว!")
+
+                            # confirm_button = WebDriverWait(driver, 10).until(
+                            #     EC.element_to_be_clickable((By.XPATH, "//button/span[text()='แข่งขันรับงาน']"))
+                            # )
                             # confirm_button.click()
                             print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
 
