@@ -12,136 +12,110 @@ try:
     chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
     driver = webdriver.Chrome(options=chrome_options)
+    current_url = driver.current_url
     
-    # เข้าไปยังหน้า grab-single/single-hall
-    driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
-    WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
+    if "https://th.turboroute.ai/#/home" in current_url:
+        # เปลี่ยนไปยังหน้า grab-single/single-hall
+        driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
+        WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
 
-    # my_car = {'4W': 4}
-    # route_direction = ['KRM02-BAGH','NDD-EA1','NDD-PDT','POR-CT1']
-    # my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
-    # route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
-    my_car = {'4WJ': 1}
-    route_direction = ['CT1-EA2']
-    # route_direction = ['CT1-4JBG-SPH']
+        # my_car = {'4W': 4}
+        # route_direction = ['KRM02-BAGH','NDD-EA1','NDD-PDT','POR-CT1']
 
-    assigned_cars = {key: 0 for key in my_car}
-    assigned_routes = {key: [] for key in my_car}
+        my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
+        route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
 
-    def get_table_data():
-        # รอให้ตารางโหลดเสร็จและมีแถวอย่างน้อยหนึ่งแถว
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'table.el-table__body tbody tr'))
-        )
-        # ดึงข้อมูลจากตารางแรกที่พบ
-        table = driver.find_element(By.CSS_SELECTOR, 'table.el-table__body')
-        
-        tbody = table.find_element(By.TAG_NAME, 'tbody')
-        rows = tbody.find_elements(By.TAG_NAME, 'tr')
-        for row in rows:
-            cells = row.find_elements(By.TAG_NAME, 'td')
+        # my_car = {'4WJ': 1}
+        # route_direction = ['CT1-4JBG-SPH']
 
-            if len(cells) >= 4:
-                car_type = cells[3].text
-                route = cells[1].text
+        assigned_cars = {key: 0 for key in my_car}
+        assigned_routes = {key: [] for key in my_car}
 
-                # ตรวจสอบว่ารถมีใน my_car และเส้นทางอยู่ใน route_direction
-                if car_type in my_car and route in route_direction:
-                    car_count = my_car[car_type]
+        def get_table_data():
+            # รอให้ตารางโหลดเสร็จและมีแถวอย่างน้อยหนึ่งแถว
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'table.el-table__body tbody tr'))
+            )
+            # ดึงข้อมูลจากตารางแรกที่พบ
+            table = driver.find_element(By.CSS_SELECTOR, 'table.el-table__body')
+            
+            tbody = table.find_element(By.TAG_NAME, 'tbody')
+            rows = tbody.find_elements(By.TAG_NAME, 'tr')
+            for row in rows:
+                cells = row.find_elements(By.TAG_NAME, 'td')
 
-                    # ถ้ารถมากกว่า 0 ถึงจะเข้ารับงาน
-                    if car_count > 0:
-                        # คลิกปุ่ม "แข่งขันรับงาน"
-                        try:
-                            row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'แข่งขันรับงาน')]")
-                            row_button.click()
+                if len(cells) >= 4:
+                    car_type = cells[3].text
+                    route = cells[1].text
 
-                            # # รอให้ป๊อปอัพแสดง
-                            WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located((By.XPATH, "//span[text()='ยืนยันแข่งขันรับงาน']"))
-                            )
+                    # ตรวจสอบว่ารถมีใน my_car และเส้นทางอยู่ใน route_direction
+                    if car_type in my_car and route in route_direction:
+                        car_count = my_car[car_type]
 
-                            time.sleep(0.5)
+                        # ถ้ารถมากกว่า 0 ถึงจะเข้ารับงาน
+                        if car_count > 0:
+                            try:
+                                row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'grab an order')]")
+                                row_button.click()
 
-                            # ตรวจสอบว่า Turnstile Response มีค่าไหม
-                            turnstile_response = WebDriverWait(driver, 5).until(
-                                EC.presence_of_element_located((By.NAME, "cf-turnstile-response"))
-                            )
-
-                            if not turnstile_response.get_attribute("value"):
-                                print("⏳ ยังไม่ได้ตรวจสอบตัวตน กำลังหาปุ่ม Checkbox...")
-
-                                # หาและคลิก Checkbox โดยตรง
-                                checkbox = WebDriverWait(driver, 10).until(
-                                    EC.element_to_be_clickable((By.CLASS_NAME, "verify-box"))  # หรือใช้ XPATH ที่ถูกต้อง
+                                WebDriverWait(driver, 10).until(
+                                    EC.presence_of_element_located((By.XPATH, "//span[text()='Grab order verification']"))
                                 )
-                                checkbox.click()
-                                print("✅ คลิก Checkbox สำเร็จ!")
 
-                                # รอให้ Turnstile Response ได้รับค่า
-                                WebDriverWait(driver, 5).until(
-                                    lambda d: turnstile_response.get_attribute("value") != ""
+                                time.sleep(0.5)
+
+                                WebDriverWait(driver, 10).until(
+                                    EC.element_to_be_clickable((By.XPATH, "//button[span[text()='grab an order']]"))
                                 )
-                                print("✅ การยืนยันตัวตนเสร็จสมบูรณ์!")
 
-                            time.sleep(0.5)
-                            print("✅ คลิก Checkbox แล้ว!!")
+                                # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
+                                # popup_button = driver.find_element(By.XPATH, "//button[span[text()='grab an order']]")
+                                # popup_button.click()
+                                print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
 
-                            # รอให้ปุ่ม "แข่งขันรับงาน" พร้อมใช้งาน
-                            WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located((By.XPATH, "//button/span[text()='แข่งขันรับงาน']"))
-                            )
-                            print("✅ พบปุ่ม 'แข่งขันรับงาน' แล้ว!")
+                            except WebDriverException as e:
+                                print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
 
-                            # confirm_button = WebDriverWait(driver, 10).until(
-                            #     EC.element_to_be_clickable((By.XPATH, "//button/span[text()='แข่งขันรับงาน']"))
-                            # )
-                            # confirm_button.click()
-                            print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
+                            # เพิ่มจำนวนรถที่รับงาน
+                            assigned_cars[car_type] += 1
 
-                        except WebDriverException as e:
-                            print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
+                            # เพิ่มเส้นทางที่รับงาน
+                            assigned_routes[car_type].append(route)
 
-                        # เพิ่มจำนวนรถที่รับงาน
-                        assigned_cars[car_type] += 1
+                            # ลดจำนวนรถที่มีใน my_car
+                            my_car[car_type] -= 1
 
-                        # เพิ่มเส้นทางที่รับงาน
-                        assigned_routes[car_type].append(route)
+            # เพิ่มสรุปผลการรับงานรายรอบ
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"\n📅 สรุปผลรายรอบ: {current_time}")
+            print("🚗 รถว่าง:")
+            for car_type, count in my_car.items():
+                if count > 0:
+                    print(f"   - {car_type} จำนวน {count} คัน")
 
-                        # ลดจำนวนรถที่มีใน my_car
-                        my_car[car_type] -= 1
-
-        # เพิ่มสรุปผลการรับงานรายรอบ
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"\n📅 สรุปผลรายรอบ: {current_time}")
-        print("🚗 รถว่าง:")
-        for car_type, count in my_car.items():
-            if count > 0:
-                print(f"   - {car_type} จำนวน {count} คัน")
-
-        print("✅ รับงาน:")
-        for car_type, routes in assigned_routes.items():
-            if routes:
-                print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
-        print("-----------------------------------------------")
-    
-        return all(count == 0 for count in my_car.values())
-
-    while True:
-        if get_table_data():
-            summary = "\n📅 ผลสรุปสุดท้าย:\n"
-            summary += "✅ รับงาน:\n"
+            print("✅ รับงาน:")
             for car_type, routes in assigned_routes.items():
                 if routes:
-                    summary += f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}\n"
-            
-            print(summary)
-            # driver.execute_script(f"alert(`{summary}`);")
-            break
+                    print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
+            print("-----------------------------------------------")
+        
+            return all(count == 0 for count in my_car.values())
 
-        time.sleep(0.5)
-        driver.refresh()
-        time.sleep(0.5)
+        while True:
+            if get_table_data():
+                summary = "\n📅 ผลสรุปสุดท้าย:\n"
+                summary += "✅ รับงาน:\n"
+                for car_type, routes in assigned_routes.items():
+                    if routes:
+                        summary += f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}\n"
+                
+                print(summary)
+                # driver.execute_script(f"alert(`{summary}`);")
+                break
+
+            time.sleep(0.5)
+            driver.refresh()
+            time.sleep(0.5)
 
 except (KeyboardInterrupt, WebDriverException) as e:
     print("หยุดการทำงาน")
