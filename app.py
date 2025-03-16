@@ -19,14 +19,8 @@ try:
         driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
         WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
 
-        # my_car = {'4W': 4}
-        # route_direction = ['KRM02-BAGH','NDD-EA1','NDD-PDT','POR-CT1']
-
-        # my_car = {'4W': 0, '4WJ': 1, '6W5.5': 0, '6w7.2': 0, '6w8.8': 0}
-        # route_direction = ['SO5-SKU','SO5-KOK','SO5-TLG-HKT','5BKT-EA2','CT1-EA2']
-
-        my_car = {'4W': 1}
-        route_direction = ['TSH-CT1']
+        my_car = {'4WJ': 1}
+        route_direction = ['CT1-EA2']
 
         assigned_cars = {key: 0 for key in my_car}
         assigned_routes = {key: [] for key in my_car}
@@ -70,6 +64,7 @@ try:
                                 # popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
                                 # popup_button.click()
                                 print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
+                                break
 
                             except WebDriverException as e:
                                 print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
