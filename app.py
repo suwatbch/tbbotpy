@@ -1,118 +1,212 @@
-import time
-from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import psutil
+import platform
+import subprocess
+import asyncio
+from urllib.parse import urlparse
+from pyppeteer import connect
 
-try:
-    chrome_options = Options()
-    chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+app = Flask(__name__)
+CORS(app)
 
-    driver = webdriver.Chrome(options=chrome_options)
-    current_url = driver.current_url
-    
-    if "https://th.turboroute.ai/#/home" in current_url:
-        # เปลี่ยนไปยังหน้า grab-single/single-hall
-        driver.get("https://th.turboroute.ai/#/grab-single/single-hall")
-        WebDriverWait(driver, 10).until(EC.url_contains('/grab-single/single-hall'))
+CHROME_DEBUG_URL = 'http://127.0.0.1:9222'
 
-        my_car = {'4WJ': 1}
-        route_direction = ['CT1-EA2']
+#---------UseChome--------------------------------------------------------
 
-        assigned_cars = {key: 0 for key in my_car}
-        assigned_routes = {key: [] for key in my_car}
+async def check_chrome_debug_mode():
+    try:
+        # ตรวจสอบว่า Chrome Debug Mode กำลังทำงานหรือไม่
+        browser = await connect(browserURL=CHROME_DEBUG_URL)
+        await browser.disconnect()
+        return {
+            "status": True,
+            "message": "Chrome กำลังทำงานใน Debug Mode"
+        }
+    except Exception as e:
+        print(f"Check chrome debug mode error: {str(e)}")
+        return {
+            "status": False,
+            "message": "กรุณาเปิด Chrome ด้วย Debug Mode"
+        }
 
-        def get_table_data():
-            # รอให้ตารางโหลดเสร็จและมีแถวอย่างน้อยหนึ่งแถว
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'table.el-table__body tbody tr'))
-            )
-            # ดึงข้อมูลจากตารางแรกที่พบ
-            table = driver.find_element(By.CSS_SELECTOR, 'table.el-table__body')
-            
-            tbody = table.find_element(By.TAG_NAME, 'tbody')
-            rows = tbody.find_elements(By.TAG_NAME, 'tr')
-            for row in rows:
-                cells = row.find_elements(By.TAG_NAME, 'td')
+@app.route('/check-chrome', methods=['GET'])
+async def check_chrome():
+    try:
+        print('Checking Chrome debug mode status...')
+        status = await check_chrome_debug_mode()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({
+            "status": False,
+            "message": f"เกิดข้อผิดพลาดในการตรวจสอบ: {str(e)}"
+        }), 500
 
-                if len(cells) >= 4:
-                    car_type = cells[3].text
-                    route = cells[1].text
 
-                    # ตรวจสอบว่ารถมีใน my_car และเส้นทางอยู่ใน route_direction
-                    if car_type in my_car and route in route_direction:
-                        car_count = my_car[car_type]
+def is_chrome_debug_running():
+    try:
+        for proc in psutil.process_iter(['name', 'cmdline']):
+            try:
+                # ตรวจสอบว่ามี Chrome ที่รันในโหมด debug อยู่หรือไม่
+                if (proc.info['cmdline'] and 
+                    any('--remote-debugging-port=9222' in cmd for cmd in proc.info['cmdline'])):
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+        return False
+    except Exception:
+        return False
 
-                        # ถ้ารถมากกว่า 0 ถึงจะเข้ารับงาน
-                        if car_count > 0:
-                            try:
-                                row_button = row.find_element(By.XPATH, ".//span[contains(text(), 'แข่งขันรับงาน')]")
-                                row_button.click()
-
-                                WebDriverWait(driver, 10).until(
-                                    EC.presence_of_element_located((By.XPATH, "//span[text()='ยืนยันแข่งขันรับงาน']"))
-                                )
-                                time.sleep(1)
-                                WebDriverWait(driver, 10).until(
-                                    EC.element_to_be_clickable((By.XPATH, "//button[span[text()='แข่งขันรับงาน']]"))
-                                )
-
-                                # คลิกปุ่ม "แข่งขันรับงาน" ในป๊อปอัพ
-                                # popup_button = driver.find_element(By.XPATH, "//button[span[text()='แข่งขันรับงาน']]")
-                                # popup_button.click()
-                                print(f"รับงานสำเร็จ สำหรับ {car_type} ในเส้นทาง {route}")
-                                break
-
-                            except WebDriverException as e:
-                                print(f"ไม่สามารถ 'แข่งขันรับงาน' ได้ มี ERROR: {e}")
-
-                            # เพิ่มจำนวนรถที่รับงาน
-                            assigned_cars[car_type] += 1
-
-                            # เพิ่มเส้นทางที่รับงาน
-                            assigned_routes[car_type].append(route)
-
-                            # ลดจำนวนรถที่มีใน my_car
-                            my_car[car_type] -= 1
-
-            # เพิ่มสรุปผลการรับงานรายรอบ
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"\n📅 สรุปผลรายรอบ: {current_time}")
-            print("🚗 รถว่าง:")
-            for car_type, count in my_car.items():
-                if count > 0:
-                    print(f"   - {car_type} จำนวน {count} คัน")
-
-            print("✅ รับงาน:")
-            for car_type, routes in assigned_routes.items():
-                if routes:
-                    print(f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}")
-            print("-----------------------------------------------")
+async def openChromeWithDebug(urls=[]):
+    try:
+        print(f"Starting Chrome with URLs: {urls}")  # Debug log
         
-            return all(count == 0 for count in my_car.values())
+        # ตรวจสอบว่ามี Chrome ในโหมด debug รันอยู่หรือไม่
+        if is_chrome_debug_running():
+            print("Chrome debug mode is already running")
+            # เชื่อมต่อกับ Chrome ที่เปิดอยู่
+            browser = await connect(browserURL=CHROME_DEBUG_URL)
+            print("Connected to existing Chrome")
+        else:
+            # สร้างคำสั่งตามระบบปฏิบัติการ
+            system = platform.system()
+            if system == "Windows":
+                command = f"start chrome --remote-debugging-port=9222 {urls[0]}"
+                shell = True
+            elif system == "Darwin":  # macOS
+                command = f"open -a 'Google Chrome' --args --remote-debugging-port=9222 {urls[0]}"
+                shell = True
+            else:  # Linux
+                command = f"google-chrome --remote-debugging-port=9222 {urls[0]}"
+                shell = False
 
-        while True:
-            if get_table_data():
-                summary = "\n📅 ผลสรุปสุดท้าย:\n"
-                summary += "✅ รับงาน:\n"
-                for car_type, routes in assigned_routes.items():
-                    if routes:
-                        summary += f"   - {car_type} จำนวน {len(routes)} คัน 🛣️ เส้นทาง: {', '.join(routes)}\n"
-                
-                print(summary)
-                # driver.execute_script(f"alert(`{summary}`);")
-                break
+            # รันคำสั่งเปิด Chrome
+            subprocess.Popen(command, shell=shell)
+            # รอให้ Chrome พร้อมใช้งาน
+            await asyncio.sleep(2)
+            
+            print(f"Chrome started, connecting to {CHROME_DEBUG_URL}")
+            browser = await connect(browserURL=CHROME_DEBUG_URL)
+            print("Connected to new Chrome instance")
 
-            time.sleep(0.5)
-            driver.refresh()
-            time.sleep(0.5)
+        # เปิด URL ที่เหลือในแท็บใหม่
+        for url in urls:
+            print(f"Opening new tab with URL: {url}")
+            page = await browser.newPage()
+            await page.goto(url, {'waitUntil': 'networkidle0'})
 
-except (KeyboardInterrupt, WebDriverException) as e:
-    print("หยุดการทำงาน")
+        # ตัด connection
+        await browser.disconnect()
 
-finally:
-    input("กด Enter เพื่อปิดเบราว์เซอร์...")
-    driver.quit()
+        return {
+            "status": True,
+            "message": f"เปิด Chrome และ URL ทั้งหมด {len(urls)} รายการสำเร็จ",
+            "openedUrls": urls
+        }
+    except Exception as e:
+        print(f"Failed to open Chrome: {str(e)}")
+        return {
+            "status": False,
+            "message": "ไม่สามารถเปิด Chrome ได้",
+            "error": str(e)
+        }
+
+async def background_open_chrome(urls):
+    try:
+        await openChromeWithDebug(urls)
+    except Exception as e:
+        print(f"Background task error: {str(e)}")
+
+@app.route('/open-chrome', methods=['POST'])
+async def open_chrome_debug():
+    try:
+        data = request.get_json()
+        urls = data.get('urls', [])
+
+        # ตรวจสอบรูปแบบข้อมูล
+        if not urls or not isinstance(urls, list):
+            return jsonify({
+                "status": "error",
+                "message": "กรุณาระบุ urls เป็น array ของ URL"
+            }), 400
+
+        # ตรวจสอบความถูกต้องของ URL
+        valid_urls = []
+        for url in urls:
+            try:
+                result = urlparse(url)
+                if all([result.scheme, result.netloc]):
+                    valid_urls.append(url)
+            except:
+                continue
+
+        if not valid_urls:
+            return jsonify({
+                "status": "error",
+                "message": "ไม่พบ URL ที่ถูกต้อง"
+            }), 400
+
+        # สร้าง task ให้ทำงานเบื้องหลัง
+        asyncio.create_task(background_open_chrome(valid_urls))
+
+        # ตอบกลับทันที
+        return jsonify({
+            "status": "success",
+            "message": "กำลังเปิด Chrome ในเบื้องหลัง",
+            "urls": valid_urls
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+def closeAllChrome():
+    try:
+        chrome_processes = []
+        for proc in psutil.process_iter(['name', 'cmdline']):
+            try:
+                if any(chrome_name in proc.info['name'].lower() for chrome_name in ['chrome', 'chromium']):
+                    chrome_processes.append(proc)
+                elif proc.info['cmdline'] and any('--remote-debugging-port' in cmd for cmd in proc.info['cmdline']):
+                    chrome_processes.append(proc)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+
+        for proc in chrome_processes:
+            try:
+                proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+        
+        return True, len(chrome_processes) 
+    except Exception:
+        return False, 0 
+
+@app.route('/close-chrome', methods=['GET'])
+def close_chrome():
+    success, count = closeAllChrome()
+    if success:
+        return {
+            "status": "success",
+            "message": f"Chrome has been closed successfully. Closed {count} processes"
+        }, 200
+    else:
+        return {
+            "status": "error",
+            "message": "Failed to close Chrome processes"
+        }, 500
+
+#---------UseChome--------------------------------------------------------
+
+if __name__ == '__main__':
+    import asyncio
+    from hypercorn.config import Config
+    from hypercorn.asyncio import serve
+
+    app.debug = True 
+    config = Config()
+    config.bind = ["0.0.0.0:4000"]
+    config.debug = True
+    asyncio.run(serve(app, config))
